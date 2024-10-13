@@ -1,4 +1,4 @@
-import java.util.*;
+import java.util.Scanner;
 
 class Process {
     int processID;
@@ -18,63 +18,97 @@ class Process {
     }
 }
 
-public class OptimizedCPUScheduling {
+public class SimpleCPUScheduling {
 
-    // Priority Scheduling using PriorityQueue
-    public static void priorityScheduling(Process[] processes) {
-        System.out.println("\n--- Priority Scheduling using PriorityQueue ---");
+    // Simple Shortest Job First (SJF) Scheduling
+    public static void sjfScheduling(Process[] processes) {
+        System.out.println("\n--- Shortest Job First Scheduling ---");
 
-        PriorityQueue<Process> pq = new PriorityQueue<>(Comparator.comparingInt(p -> p.priority)); // Min-Heap based on priority
-
-        // Add all processes to the priority queue
-        pq.addAll(Arrays.asList(processes));
+        // Sort processes by burst time
+        for (int i = 0; i < processes.length - 1; i++) {
+            for (int j = i + 1; j < processes.length; j++) {
+                if (processes[i].burstTime > processes[j].burstTime) {
+                    Process temp = processes[i];
+                    processes[i] = processes[j];
+                    processes[j] = temp;
+                }
+            }
+        }
 
         int currentTime = 0;
 
-        while (!pq.isEmpty()) {
-            Process process = pq.poll();
+        for (Process process : processes) {
             System.out.println("Process " + process.processID + " is running for " + process.burstTime + " units.");
-            
-            // Calculate waiting time and turnaround time
+
             process.waitingTime = currentTime - process.arrivalTime;
-            process.turnAroundTime = process.waitingTime + process.burstTime;
-            
             currentTime += process.burstTime;
-            
-            // Simulate delay for visualization
+            process.turnAroundTime = process.waitingTime + process.burstTime;
+
             try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
         }
 
         printResults(processes);
     }
 
-    // Round Robin Scheduling using LinkedList (Circular Queue)
-    public static void roundRobin(Process[] processes, int timeQuantum) {
-        System.out.println("\n--- Round Robin Scheduling using LinkedList (Circular Queue) ---");
+    // Simple Priority Scheduling
+    public static void priorityScheduling(Process[] processes) {
+        System.out.println("\n--- Priority Scheduling ---");
 
-        LinkedList<Process> queue = new LinkedList<>(Arrays.asList(processes));
+        // Sort processes by priority (lower number = higher priority)
+        for (int i = 0; i < processes.length - 1; i++) {
+            for (int j = i + 1; j < processes.length; j++) {
+                if (processes[i].priority > processes[j].priority) {
+                    Process temp = processes[i];
+                    processes[i] = processes[j];
+                    processes[j] = temp;
+                }
+            }
+        }
+
         int currentTime = 0;
 
-        System.out.println("\nTime | Process Execution");
+        for (Process process : processes) {
+            System.out.println("Process " + process.processID + " is running for " + process.burstTime + " units.");
 
-        while (!queue.isEmpty()) {
-            Process process = queue.poll();
-            
-            if (process.remainingTime > timeQuantum) {
-                System.out.println(currentTime + " | Process " + process.processID + " is running for " + timeQuantum + " units.");
-                currentTime += timeQuantum;
-                process.remainingTime -= timeQuantum;
-                queue.addLast(process); // Re-add to the back of the queue
-            } else {
-                System.out.println(currentTime + " | Process " + process.processID + " is running for " + process.remainingTime + " units.");
-                currentTime += process.remainingTime;
-                process.remainingTime = 0;
-                process.waitingTime = currentTime - process.burstTime;
-            }
+            process.waitingTime = currentTime - process.arrivalTime;
+            currentTime += process.burstTime;
+            process.turnAroundTime = process.waitingTime + process.burstTime;
 
-            // Simulate delay for visualization
             try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
         }
+
+        printResults(processes);
+    }
+
+    // Simple Round Robin Scheduling
+    public static void roundRobin(Process[] processes, int timeQuantum) {
+        System.out.println("\n--- Round Robin Scheduling ---");
+
+        int currentTime = 0;
+        boolean processesRemaining;
+
+        do {
+            processesRemaining = false;
+
+            for (Process process : processes) {
+                if (process.remainingTime > 0) {
+                    processesRemaining = true;
+                    if (process.remainingTime > timeQuantum) {
+                        System.out.println("Process " + process.processID + " is running for " + timeQuantum + " units.");
+                        process.remainingTime -= timeQuantum;
+                        currentTime += timeQuantum;
+                    } else {
+                        System.out.println("Process " + process.processID + " is running for " + process.remainingTime + " units.");
+                        currentTime += process.remainingTime;
+                        process.remainingTime = 0;
+                    }
+
+                    process.waitingTime = currentTime - process.burstTime;
+
+                    try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
+                }
+            }
+        } while (processesRemaining);
 
         // Calculate Turnaround Time for each process
         for (Process process : processes) {
@@ -84,47 +118,12 @@ public class OptimizedCPUScheduling {
         printResults(processes);
     }
 
-    // Shortest Job First (SJF) Scheduling using PriorityQueue (Min-Heap)
-    public static void sjfScheduling(Process[] processes) {
-        System.out.println("\n--- Shortest Job First Scheduling using PriorityQueue ---");
-
-        PriorityQueue<Process> pq = new PriorityQueue<>(Comparator.comparingInt(p -> p.burstTime)); // Min-Heap based on burst time
-        pq.addAll(Arrays.asList(processes)); // Add all processes to the priority queue
-
-        int currentTime = 0;
-
-        while (!pq.isEmpty()) {
-            Process process = pq.poll();
-            System.out.println("Process " + process.processID + " is running for " + process.burstTime + " units.");
-
-            // Calculate waiting time and turnaround time
-            process.waitingTime = currentTime - process.arrivalTime;
-            process.turnAroundTime = process.waitingTime + process.burstTime;
-
-            currentTime += process.burstTime;
-
-            // Simulate delay for visualization
-            try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        printResults(processes);
-    }
-
-    // Print scheduling results
+    // Function to print the results after scheduling
     public static void printResults(Process[] processes) {
-        System.out.println("\nFinal Process Statistics:");
-        System.out.println("ProcessID\tBurstTime\tWaitingTime \tTurnAroundTime\tPriority");
-        int totalWaitingTime = 0;
-        int totalTurnAroundTime = 0;
-
+        System.out.println("\nProcessID\tBurstTime\tWaitingTime\tTurnAroundTime\tPriority");
         for (Process p : processes) {
-            totalWaitingTime += p.waitingTime;
-            totalTurnAroundTime += p.turnAroundTime;
             System.out.println(p.processID + "\t\t" + p.burstTime + "\t\t" + p.waitingTime + "\t\t" + p.turnAroundTime + "\t\t" + p.priority);
         }
-
-        System.out.println("\nAverage Waiting Time: " + (double) totalWaitingTime / processes.length);
-        System.out.println("Average Turnaround Time: " + (double) totalTurnAroundTime / processes.length);
     }
 
     public static void main(String[] args) {
@@ -145,25 +144,27 @@ public class OptimizedCPUScheduling {
         }
 
         System.out.println("\nChoose Scheduling Algorithm: ");
-        System.out.println("1. Shortest Job First");
+        System.out.println("1. Shortest Job First (SJF)");
         System.out.println("2. Priority Scheduling");
         System.out.println("3. Round Robin");
         int choice = sc.nextInt();
 
         switch (choice) {
             case 1:
-                sjfScheduling(processes.clone());
+                sjfScheduling(processes);
                 break;
             case 2:
-                priorityScheduling(processes.clone());
+                priorityScheduling(processes);
                 break;
             case 3:
                 System.out.print("Enter the time quantum for Round Robin: ");
                 int timeQuantum = sc.nextInt();
-                roundRobin(processes.clone(), timeQuantum);
+                roundRobin(processes, timeQuantum);
                 break;
             default:
                 System.out.println("Invalid choice.");
         }
+
+        sc.close();
     }
 }
