@@ -1,170 +1,226 @@
-import java.util.Scanner;
+import javax.swing.*;
+import java.awt.*;
+import java.util.Random;
 
-class Process {
-    int processID;
-    int burstTime;
-    int arrivalTime;
-    int priority;
-    int waitingTime;
-    int turnAroundTime;
-    int remainingTime;  // Used for Round Robin scheduling
+public class SortAndAlgorithmVisualization extends JPanel {
+    private final int WINDOW_WIDTH = 800;
+    private final int WINDOW_HEIGHT = 600;
+    private final int BAR_WIDTH = 4;
+    private final int NUM_BARS = WINDOW_WIDTH / BAR_WIDTH;
+    private final int[] numbers;
+    private String elapsedTime = ""; // To display elapsed time for all algorithms
 
-    public Process(int processID, int burstTime, int arrivalTime, int priority) {
-        this.processID = processID;
-        this.burstTime = burstTime;
-        this.arrivalTime = arrivalTime;
-        this.priority = priority;
-        this.remainingTime = burstTime;
-    }
-}
-
-public class SimpleCPUScheduling {
-
-    // Simple Shortest Job First (SJF) Scheduling
-    public static void sjfScheduling(Process[] processes) {
-        System.out.println("\n--- Shortest Job First Scheduling ---");
-
-        // Sort processes by burst time
-        for (int i = 0; i < processes.length - 1; i++) {
-            for (int j = i + 1; j < processes.length; j++) {
-                if (processes[i].burstTime > processes[j].burstTime) {
-                    Process temp = processes[i];
-                    processes[i] = processes[j];
-                    processes[j] = temp;
-                }
-            }
-        }
-
-        int currentTime = 0;
-
-        for (Process process : processes) {
-            System.out.println("Process " + process.processID + " is running for " + process.burstTime + " units.");
-
-            process.waitingTime = currentTime - process.arrivalTime;
-            currentTime += process.burstTime;
-            process.turnAroundTime = process.waitingTime + process.burstTime;
-
-            try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        printResults(processes);
+    public SortAndAlgorithmVisualization() {
+        numbers = new int[NUM_BARS];
+        initializeArray();
     }
 
-    // Simple Priority Scheduling
-    public static void priorityScheduling(Process[] processes) {
-        System.out.println("\n--- Priority Scheduling ---");
-
-        // Sort processes by priority (lower number = higher priority)
-        for (int i = 0; i < processes.length - 1; i++) {
-            for (int j = i + 1; j < processes.length; j++) {
-                if (processes[i].priority > processes[j].priority) {
-                    Process temp = processes[i];
-                    processes[i] = processes[j];
-                    processes[j] = temp;
-                }
-            }
+    private void initializeArray() {
+        Random random = new Random();
+        for (int i = 0; i < NUM_BARS; i++) {
+            numbers[i] = random.nextInt(WINDOW_HEIGHT - 50) + 10;
         }
-
-        int currentTime = 0;
-
-        for (Process process : processes) {
-            System.out.println("Process " + process.processID + " is running for " + process.burstTime + " units.");
-
-            process.waitingTime = currentTime - process.arrivalTime;
-            currentTime += process.burstTime;
-            process.turnAroundTime = process.waitingTime + process.burstTime;
-
-            try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        printResults(processes);
     }
 
-    // Simple Round Robin Scheduling
-    public static void roundRobin(Process[] processes, int timeQuantum) {
-        System.out.println("\n--- Round Robin Scheduling ---");
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
 
-        int currentTime = 0;
-        boolean processesRemaining;
+        // Draw bars
+        for (int i = 0; i < NUM_BARS; i++) {
+            g.setColor(Color.WHITE);
+            g.fillRect(i * BAR_WIDTH, WINDOW_HEIGHT - numbers[i], BAR_WIDTH, numbers[i]);
+            g.setColor(Color.BLACK);
+            g.drawRect(i * BAR_WIDTH, WINDOW_HEIGHT - numbers[i], BAR_WIDTH, numbers[i]);
+        }
 
-        do {
-            processesRemaining = false;
+        // Display elapsed time
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Time: " + elapsedTime, 20, 30);
+    }
 
-            for (Process process : processes) {
-                if (process.remainingTime > 0) {
-                    processesRemaining = true;
-                    if (process.remainingTime > timeQuantum) {
-                        System.out.println("Process " + process.processID + " is running for " + timeQuantum + " units.");
-                        process.remainingTime -= timeQuantum;
-                        currentTime += timeQuantum;
-                    } else {
-                        System.out.println("Process " + process.processID + " is running for " + process.remainingTime + " units.");
-                        currentTime += process.remainingTime;
-                        process.remainingTime = 0;
+    public void bubbleSort() {
+        new Thread(() -> {
+            long startTime = System.nanoTime(); // Start time
+            for (int i = 0; i < numbers.length - 1; i++) {
+                for (int j = 0; j < numbers.length - i - 1; j++) {
+                    if (numbers[j] > numbers[j + 1]) {
+                        swap(j, j + 1);
                     }
-
-                    process.waitingTime = currentTime - process.burstTime;
-
-                    try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
                 }
             }
-        } while (processesRemaining);
-
-        // Calculate Turnaround Time for each process
-        for (Process process : processes) {
-            process.turnAroundTime = process.waitingTime + process.burstTime;
-        }
-
-        printResults(processes);
+            long endTime = System.nanoTime(); // End time
+            elapsedTime = formatTime(endTime - startTime);
+            repaint();
+        }).start();
     }
 
-    // Function to print the results after scheduling
-    public static void printResults(Process[] processes) {
-        System.out.println("\nProcessID\tBurstTime\tWaitingTime\tTurnAroundTime\tPriority");
-        for (Process p : processes) {
-            System.out.println(p.processID + "\t\t" + p.burstTime + "\t\t" + p.waitingTime + "\t\t" + p.turnAroundTime + "\t\t" + p.priority);
+    public void insertionSort() {
+        new Thread(() -> {
+            long startTime = System.nanoTime();
+            for (int i = 1; i < numbers.length; i++) {
+                int key = numbers[i];
+                int j = i - 1;
+                while (j >= 0 && numbers[j] > key) {
+                    numbers[j + 1] = numbers[j];
+                    j--;
+                    repaintAndSleep();
+                }
+                numbers[j + 1] = key;
+                repaintAndSleep();
+            }
+            long endTime = System.nanoTime();
+            elapsedTime = formatTime(endTime - startTime);
+            repaint();
+        }).start();
+    }
+
+    public void selectionSort() {
+        new Thread(() -> {
+            long startTime = System.nanoTime();
+            for (int i = 0; i < numbers.length - 1; i++) {
+                int minIndex = i;
+                for (int j = i + 1; j < numbers.length; j++) {
+                    if (numbers[j] < numbers[minIndex]) {
+                        minIndex = j;
+                    }
+                }
+                swap(i, minIndex);
+            }
+            long endTime = System.nanoTime();
+            elapsedTime = formatTime(endTime - startTime);
+            repaint();
+        }).start();
+    }
+
+    public void mergeSort() {
+        new Thread(() -> {
+            long startTime = System.nanoTime();
+            mergeSortHelper(0, numbers.length - 1);
+            long endTime = System.nanoTime();
+            elapsedTime = formatTime(endTime - startTime);
+            repaint();
+        }).start();
+    }
+
+    private void mergeSortHelper(int left, int right) {
+        if (left < right) {
+            int mid = (left + right) / 2;
+            mergeSortHelper(left, mid);
+            mergeSortHelper(mid + 1, right);
+            merge(left, mid, right);
         }
+    }
+
+    private void merge(int left, int mid, int right) {
+        int[] temp = new int[right - left + 1];
+        int i = left, j = mid + 1, k = 0;
+
+        while (i <= mid && j <= right) {
+            if (numbers[i] <= numbers[j]) {
+                temp[k++] = numbers[i++];
+            } else {
+                temp[k++] = numbers[j++];
+            }
+            repaintAndSleep();
+        }
+
+        while (i <= mid) {
+            temp[k++] = numbers[i++];
+            repaintAndSleep();
+        }
+
+        while (j <= right) {
+            temp[k++] = numbers[j++];
+            repaintAndSleep();
+        }
+
+        for (i = left; i <= right; i++) {
+            numbers[i] = temp[i - left];
+            repaintAndSleep();
+        }
+    }
+
+    public void quickSort() {
+        new Thread(() -> {
+            long startTime = System.nanoTime();
+            quickSortHelper(0, numbers.length - 1);
+            long endTime = System.nanoTime();
+            elapsedTime = formatTime(endTime - startTime);
+            repaint();
+        }).start();
+    }
+
+    private void quickSortHelper(int low, int high) {
+        if (low < high) {
+            int pivot = partition(low, high);
+            quickSortHelper(low, pivot - 1);
+            quickSortHelper(pivot + 1, high);
+        }
+    }
+
+    private int partition(int low, int high) {
+        int pivot = numbers[high];
+        int i = low - 1;
+        for (int j = low; j < high; j++) {
+            if (numbers[j] < pivot) {
+                i++;
+                swap(i, j);
+            }
+        }
+        swap(i + 1, high);
+        return i + 1;
+    }
+
+    private void swap(int i, int j) {
+        int temp = numbers[i];
+        numbers[i] = numbers[j];
+        numbers[j] = temp;
+        repaintAndSleep();
+    }
+
+    private void repaintAndSleep() {
+        repaint();
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String formatTime(long nanoseconds) {
+        return (nanoseconds / 1_000_000.0) + " ms";
     }
 
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+        JFrame frame = new JFrame("Sorting Algorithm Visualization");
+        SortAndAlgorithmVisualization panel = new SortAndAlgorithmVisualization();
 
-        System.out.print("Enter the number of processes: ");
-        int n = sc.nextInt();
-        Process[] processes = new Process[n];
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(panel.WINDOW_WIDTH, panel.WINDOW_HEIGHT);
+        frame.add(panel);
+        frame.setVisible(true);
 
-        for (int i = 0; i < n; i++) {
-            System.out.print("Enter burst time for process " + (i + 1) + ": ");
-            int burstTime = sc.nextInt();
-            System.out.print("Enter arrival time for process " + (i + 1) + ": ");
-            int arrivalTime = sc.nextInt();
-            System.out.print("Enter priority for process " + (i + 1) + ": ");
-            int priority = sc.nextInt();
-            processes[i] = new Process(i + 1, burstTime, arrivalTime, priority);
-        }
+        String[] options = { "Bubble Sort", "Insertion Sort", "Selection Sort", "Merge Sort", "Quick Sort" };
+        String choice = (String) JOptionPane.showInputDialog(
+                null,
+                "Select an algorithm:",
+                "Algorithm Selection",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
 
-        System.out.println("\nChoose Scheduling Algorithm: ");
-        System.out.println("1. Shortest Job First (SJF)");
-        System.out.println("2. Priority Scheduling");
-        System.out.println("3. Round Robin");
-        int choice = sc.nextInt();
-
-        switch (choice) {
-            case 1:
-                sjfScheduling(processes);
-                break;
-            case 2:
-                priorityScheduling(processes);
-                break;
-            case 3:
-                System.out.print("Enter the time quantum for Round Robin: ");
-                int timeQuantum = sc.nextInt();
-                roundRobin(processes, timeQuantum);
-                break;
-            default:
-                System.out.println("Invalid choice.");
-        }
-
-        sc.close();
+        SwingUtilities.invokeLater(() -> {
+            switch (choice) {
+                case "Bubble Sort" -> panel.bubbleSort();
+                case "Insertion Sort" -> panel.insertionSort();
+                case "Selection Sort" -> panel.selectionSort();
+                case "Merge Sort" -> panel.mergeSort();
+                case "Quick Sort" -> panel.quickSort();
+                default -> JOptionPane.showMessageDialog(null, "Invalid Selection!");
+            }
+        });
     }
 }
